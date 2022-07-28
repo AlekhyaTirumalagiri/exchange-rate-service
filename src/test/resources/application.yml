@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: exchange-rate-service
+application:
+  url: https://api.exchangerate.host
