@@ -5,6 +5,7 @@ import com.challenge.exchangeratechallenge.service.ExchangeRateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -33,32 +34,30 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
         this.restTemplate = restTemplate;
     }
 
+    @Cacheable(value = "all_exchange_rates", key = "#currency")
     public ExchangeRates getAllExchangeRatesForGivenCurrency(String currency) {
-        ExchangeRates exchangeRates = new ExchangeRates();
+        ExchangeRates exchangeRates;
         try {
             log.info("Inside getAllExchangeRatesForGivenCurrency method in ExchangeRateServiceImpl");
             if (StringUtils.isEmpty(currency) || pattern.matcher(currency).find()) {
-                exchangeRates.setSuccess("false");
-                exchangeRates.setErrorMessage("Please provide valid details");
-                return exchangeRates;
+                return new ExchangeRates("false", "Please provide valid details");
             }
             exchangeRates = restTemplate.getForObject(exchangeURL + "/latest?base=" + currency, ExchangeRates.class);
         } catch (Exception e) {
             log.error("Exception occured while processing data for currency {}", currency, e);
-            exchangeRates.setSuccess("false");
-            exchangeRates.setErrorMessage(e.getMessage());
+            exchangeRates = new ExchangeRates("false", e.getMessage());
         }
         return exchangeRates;
     }
 
+    @Cacheable(cacheNames = "conversion_values")
     public List<ExchangeRates> getConversionValue(String from, List<String> toList, Integer amount) {
         log.info("Inside getValueFromAtoListOfCcy method in ExchangeRateServiceImpl");
         List<ExchangeRates> exchangeRatesList = new ArrayList<>();
         try {
-            log.info("Inside getConversionValue method in ExchangeRateServiceImpl");
             if (StringUtils.isEmpty(from) || CollectionUtils.isEmpty(toList)
                     || pattern.matcher(from).find() || toList.stream().anyMatch(e -> pattern.matcher(e).find())) {
-                constructErrorMessage("Please provide valid details", exchangeRatesList);
+                exchangeRatesList.add(new ExchangeRates("false", "Please provide valid details"));
                 return exchangeRatesList;
             }
             for (String toDate : toList) {
@@ -67,16 +66,10 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
             }
         } catch (Exception e) {
             log.error("Exception occured while processing data in getExchangeRateFromCurrencyAToB -> {}", e);
-            constructErrorMessage(e.getMessage(), exchangeRatesList);
+            exchangeRatesList.add(new ExchangeRates("false", e.getMessage()));
         }
         return exchangeRatesList;
     }
 
-    public void constructErrorMessage(String errorMessage, List<ExchangeRates> exchangeRatesList) {
-        ExchangeRates exchangeRates = new ExchangeRates();
-        exchangeRates.setSuccess("false");
-        exchangeRates.setErrorMessage(errorMessage);
-        exchangeRatesList.add(exchangeRates);
-    }
 
 }

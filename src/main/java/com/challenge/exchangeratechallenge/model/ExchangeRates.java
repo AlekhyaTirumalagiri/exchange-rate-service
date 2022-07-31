@@ -2,6 +2,7 @@ package com.challenge.exchangeratechallenge.model;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Map;
@@ -10,21 +11,33 @@ import java.util.Map;
  */
 @Getter
 @Setter
+@NoArgsConstructor
 public class ExchangeRates {
-    @JsonView({Views.OnlyRates.class,
-                Views.ConversionValue.class})
+
+    public ExchangeRates(String success, String errorMessage) {
+        this.success = success;
+        this.errorMessage = errorMessage;
+    }
+
+    @JsonView({Views.OnlyRates.class, Views.ConversionValue.class})
     public String success;
+
     public String base;
     public String date;
+
     @JsonView(Views.OnlyRates.class)
     public Map<String, String> rates;
+
     public String historical;
+
     @JsonView({Views.ConversionValue.class})
     public String result;
+
     @JsonView(Views.ConversionValue.class)
     public Map<String, String> query;
+
     public Map<String, String> info;
-    @JsonView({Views.OnlyRates.class,
-            Views.ConversionValue.class})
+
+    @JsonView({Views.OnlyRates.class, Views.ConversionValue.class})
     public String errorMessage;
 }
